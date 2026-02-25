@@ -2,6 +2,9 @@
 .DS_Store
 Thumbs.db
 
+# Text notes
+*.txt
+
 # IDE
 .vs/*
 .idea/
@@ -122,5 +125,5 @@ Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
-출처: https://splayer.tistory.com/102 [S Player:티스토리]
-이거 ㄱㅊ?
+
+\.txt

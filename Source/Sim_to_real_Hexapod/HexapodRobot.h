@@ -4,7 +4,45 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "HexapodRobot.generated.h"
+
+
+USTRUCT()
+struct FHexapodLeg
+{
+	GENERATED_BODY()
+
+	// ê´€ì ˆ í”¼ë²— (íšŒì „ ê¸°ì¤€ì )
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* Hip = nullptr;		// Coxa: ëª¸í†µ-ë‹¤ë¦¬ ì—°ê²°ë¶€
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* Thigh = nullptr;	// Femur: ë‹¤ë¦¬ ì¤‘ê°„
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* Calf = nullptr;	// Tibia: ë‹¤ë¦¬ ë
+
+	// ë©”ì‹œ (ì‹œê°ì  í‘œí˜„)
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* HipMesh = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* ThighMesh = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* CalfMesh = nullptr;
+
+	// ë¬¼ë¦¬ ê´€ì ˆ (ê°•í™”í•™ìŠµ Action/Observation ì—°ê²°ì )
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* HipConstraint = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* ThighConstraint = nullptr;
+
+	UPROPERTY(VisibleAnywhere)
+	UPhysicsConstraintComponent* CalfConstraint = nullptr;
+};
 
 UCLASS()
 class SIM_TO_REAL_HEXAPOD_API AHexapodRobot : public APawn
@@ -12,56 +50,34 @@ class SIM_TO_REAL_HEXAPOD_API AHexapodRobot : public APawn
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this pawn's properties
 	AHexapodRobot();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
+public:
 	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	// RL Action: 18ê°œ ëª©í‘œ ê°ë„ ì…ë ¥ (6ë‹¤ë¦¬ Ã— 3ê´€ì ˆ)
+	void ApplyJointTargets(const TArray<float>& Targets);
+
+	// RL Observation: 18ê°œ ê´€ì ˆ í˜„ì¬ ê°ë„ ë°˜í™˜
+	TArray<float> GetJointAngles() const;
+
 private:
+	// ëª¸í†µ ë©”ì‹œ
 	UPROPERTY(VisibleAnywhere, Category = "Robot")
-	USceneComponent* Body;
+	UStaticMeshComponent* BodyMesh;
 
-
-	/*
-	* UE°èÃş
-	 Body (SceneComponent)
-    ¦§ Leg1_Hip
-	¦¢	 ¦¢	¦¦ Leg1_Hip_Mesh
-    ¦¢   ¦¦ Leg1_Thigh
-	¦¢		¦¢	¦¦ Leg1_Thigh_Mesh
-    ¦¢		¦¦ Leg1_Calf
-	¦¢			¦¦ Leg1_Calf_Mesh
-    ¦§ Leg2_Hip
-
-	
-	*/
-
-	///Leg 1 SceneComponent  //°üÀıÀÇ À§Ä¡¿Í È¸ÀüÀ» Á¦¾îÇÏ´Â ÄÄÆ÷³ÍÆ® 
-	//Çö½Ç°úÀÇ ¿ÀÂ÷¸¦ ÁÙÀÌ±âÀ§ÇØ¼­´Â °üÀıÀ§Ä¡¿Í Á¤È®ÇÏ°Ô ÀÏÄ¡ÇØ¾ßÇÔ.
+	// 6ê°œ ë‹¤ë¦¬
 	UPROPERTY(VisibleAnywhere, Category = "Robot")
-	USceneComponent* Leg1_Hip;  //¸öÅë ÂÊ
+	TArray<FHexapodLeg> Legs;
 
-	UPROPERTY(VisibleAnywhere, Category = "Robot")
-	USceneComponent* Leg1_Thigh; //´Ù¸® Áß°£
+	// ìƒì„±ìì—ì„œ ë‹¤ë¦¬ ì»´í¬ë„ŒíŠ¸ ì´ˆê¸°í™”
+	void InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator LegRotation,
+	                   UStaticMesh* CoxaMesh, UStaticMesh* FemurMesh, UStaticMesh* TibiaMesh);
 
-	UPROPERTY(VisibleAnywhere, Category = "Robot")
-	USceneComponent* Leg1_Calf; // ´Ù¸® ³¡
-
-	// Leg 1 StaticMeshComponent // ¿ÜÇü´ã´ç ÄÄÆ÷³ÍÆ®
-	UPROPERTY(VisibleAnywhere, Category = "Robot")
-	UStaticMeshComponent* Leg1_Hip_Mesh;
-
-	UPROPERTY(VisibleAnywhere, Category = "Robot")
-	UStaticMeshComponent* Leg1_Thigh_Mesh;
-
-	UPROPERTY(VisibleAnywhere, Category = "Robot")
-	UStaticMeshComponent* Leg1_Calf_Mesh;
+	// BeginPlayì—ì„œ ë¬¼ë¦¬ ê´€ì ˆ ì—°ê²° ë° ì„¤ì •
+	void SetupLegConstraints();
 };
