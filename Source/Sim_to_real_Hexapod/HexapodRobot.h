@@ -54,6 +54,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -67,11 +68,11 @@ public:
 
 private:
 	// 몸통 메시
-	UPROPERTY(VisibleAnywhere, Category = "Robot")
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* BodyMesh;
 
 	// 6개 다리
-	UPROPERTY(VisibleAnywhere, Category = "Robot")
+	UPROPERTY(VisibleAnywhere, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 	TArray<FHexapodLeg> Legs;
 
 	// 생성자에서 다리 컴포넌트 초기화
@@ -80,4 +81,50 @@ private:
 
 	// BeginPlay에서 물리 관절 연결 및 설정
 	void SetupLegConstraints();
+
+
+
+
+	/*
+	 * 6다리 위치 및 방향 설정
+	 *
+	 *  Leg3  Leg4  Leg5
+	 *   [앞] [중] [뒤]
+	 *  ================  (몸통)
+	 *   [앞] [중] [뒤]
+	 *  Leg0  Leg1  Leg2
+	 */
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Hip", meta = (AllowPrivateAccess = "true"))
+	// 전부다 hip위치 기준.
+	TArray<FVector> HipOffsets = {
+			FVector(8.f,    10.f,  0.f),  // Leg0: 앞 오른쪽
+			FVector(10.f,    0.f,  0.f),  // Leg1: 중 오른쪽
+			FVector(8.f,   -10.f,  0.f),  // Leg2: 뒤 오른쪽
+			FVector(-8.f,   10.f,  0.f),  // Leg3: 앞 왼쪽
+			FVector(-10.f,   0.f,  0.f),  // Leg4: 중 왼쪽
+			FVector(-8.f,  -10.f,  0.f),  // Leg5: 뒤 왼쪽
+	};
+	// 전부다 hip위치 기준.
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Hip", meta = (AllowPrivateAccess = "true"))
+	TArray<FRotator> HipRotations = {
+		FRotator(0.f,   45.f,   0.f),   // Leg0
+		FRotator(0.f,    0.f,   0.f),   // Leg1
+		FRotator(0.f,  -45.f,   0.f),   // Leg2
+		FRotator(0.f,  135.f,   0.f),   // Leg3
+		FRotator(0.f, -180.f,   0.f),   // Leg4
+		FRotator(0.f, -135.f,   0.f),   // Leg5
+	};
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
+	FVector ThighOffset = FVector(2.f, 2.5, -1.5);  // Hip에서 Thigh까지의 상대 위치
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
+	FRotator ThighRotation = FRotator(10.f, 0.f, 90.f);
+	//FRotator(Pitch, Yaw, Roll)
+	//       Y축    Z축   X축
+
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Calf", meta = (AllowPrivateAccess = "true"))
+	FVector CalfOffset = FVector(15.5f, -1.f, 2.5);
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Calf", meta = (AllowPrivateAccess = "true"))
+	FRotator CalfRotator = FRotator(180.f, 90.f, 90.f);
+	//FRotator(Pitch, Yaw, Roll)
+	//       Y축    Z축   X축
 };

@@ -24,32 +24,6 @@ AHexapodRobot::AHexapodRobot()
 	if (BodyMeshAsset.Succeeded())
 		BodyMesh->SetStaticMesh(BodyMeshAsset.Object);
 
-	/*
-	 * 6다리 위치 및 방향 설정
-	 *
-	 *  Leg3  Leg4  Leg5
-	 *   [앞] [중] [뒤]
-	 *  ================  (몸통)
-	 *   [앞] [중] [뒤]
-	 *  Leg0  Leg1  Leg2
-	 */
-	TArray<FVector> Offsets = {
-		FVector( 20.f,  10.f, 0.f),  // Leg0: 앞 오른쪽
-		FVector(  0.f,  10.f, 0.f),  // Leg1: 중 오른쪽
-		FVector(-20.f,  10.f, 0.f),  // Leg2: 뒤 오른쪽
-		FVector( 20.f, -10.f, 0.f),  // Leg3: 앞 왼쪽
-		FVector(  0.f, -10.f, 0.f),  // Leg4: 중 왼쪽
-		FVector(-20.f, -10.f, 0.f),  // Leg5: 뒤 왼쪽
-	};
-
-	TArray<FRotator> Rotations = {
-		FRotator(0.f,  45.f, 0.f),   // Leg0
-		FRotator(0.f,  90.f, 0.f),   // Leg1
-		FRotator(0.f, 135.f, 0.f),   // Leg2
-		FRotator(0.f, -45.f, 0.f),   // Leg3
-		FRotator(0.f, -90.f, 0.f),   // Leg4
-		FRotator(0.f,-135.f, 0.f),   // Leg5
-	};
 
 	UStaticMesh* CoxaMesh  = CoxaAsset.Succeeded()  ? CoxaAsset.Object  : nullptr;
 	UStaticMesh* FemurMesh = FemurAsset.Succeeded() ? FemurAsset.Object : nullptr;
@@ -58,7 +32,7 @@ AHexapodRobot::AHexapodRobot()
 	Legs.SetNum(6);
 	for (int32 i = 0; i < 6; i++)
 	{
-		InitializeLeg(i, Offsets[i], Rotations[i], CoxaMesh, FemurMesh, TibiaMesh);
+		InitializeLeg(i, HipOffsets[i], HipRotations[i], CoxaMesh, FemurMesh, TibiaMesh);
 	}
 }
 
@@ -85,7 +59,8 @@ void AHexapodRobot::InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator Le
 	// --- Thigh (Femur) ---
 	Leg.Thigh = CreateDefaultSubobject<USceneComponent>(*FString::Printf(TEXT("%s_Thigh"), *P));
 	Leg.Thigh->SetupAttachment(Leg.HipMesh);
-	Leg.Thigh->SetRelativeLocation(FVector(10.f, 0.f, 0.f)); // Hip 끝점에 위치
+	Leg.Thigh->SetRelativeLocation(ThighOffset); 
+	Leg.Thigh->SetRelativeRotation(ThighRotation);
 
 	Leg.ThighMesh = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("%s_ThighMesh"), *P));
 	Leg.ThighMesh->SetupAttachment(Leg.Thigh);
@@ -98,7 +73,8 @@ void AHexapodRobot::InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator Le
 	// --- Calf (Tibia) ---
 	Leg.Calf = CreateDefaultSubobject<USceneComponent>(*FString::Printf(TEXT("%s_Calf"), *P));
 	Leg.Calf->SetupAttachment(Leg.ThighMesh);
-	Leg.Calf->SetRelativeLocation(FVector(10.f, 0.f, 0.f)); // Thigh 끝점에 위치
+	Leg.Calf->SetRelativeLocation(CalfOffset); 
+	Leg.Calf->SetRelativeRotation(CalfRotator);
 
 	Leg.CalfMesh = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("%s_CalfMesh"), *P));
 	Leg.CalfMesh->SetupAttachment(Leg.Calf);
@@ -107,6 +83,36 @@ void AHexapodRobot::InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator Le
 
 	Leg.CalfConstraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(*FString::Printf(TEXT("%s_CalfConstraint"), *P));
 	Leg.CalfConstraint->SetupAttachment(Leg.Calf);
+}
+
+
+//bp에서 값이 오버라이딩 되어있으면 그거 cpp값으로 덮어 씌우는 기능을 가짐. 
+void AHexapodRobot::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	for (int32 i = 0; i < 6; i++)
+	{
+		if (!Legs[i].Hip) continue;
+
+		if (HipOffsets.IsValidIndex(i))
+			Legs[i].Hip->SetRelativeLocation(HipOffsets[i]);
+
+		if (HipRotations.IsValidIndex(i))
+			Legs[i].Hip->SetRelativeRotation(HipRotations[i]);
+
+		if (Legs[i].Thigh)
+		{
+			Legs[i].Thigh->SetRelativeLocation(ThighOffset);
+			Legs[i].Thigh->SetRelativeRotation(ThighRotation);
+		}
+
+		if (Legs[i].Calf)
+		{
+			Legs[i].Calf->SetRelativeLocation(CalfOffset);
+			Legs[i].Calf->SetRelativeRotation(CalfRotator);
+		}
+	}
 }
 
 void AHexapodRobot::BeginPlay()
