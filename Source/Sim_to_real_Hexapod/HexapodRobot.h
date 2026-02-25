@@ -51,12 +51,6 @@ class SIM_TO_REAL_HEXAPOD_API AHexapodRobot : public APawn
 
 public:
 	AHexapodRobot();
-
-protected:
-	virtual void BeginPlay() override;
-	virtual void OnConstruction(const FTransform& Transform) override;
-
-public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -65,6 +59,10 @@ public:
 
 	// RL Observation: 18개 관절 현재 각도 반환
 	TArray<float> GetJointAngles() const;
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 private:
 	// 몸통 메시
@@ -76,14 +74,10 @@ private:
 	TArray<FHexapodLeg> Legs;
 
 	// 생성자에서 다리 컴포넌트 초기화
-	void InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator LegRotation,
-	                   UStaticMesh* CoxaMesh, UStaticMesh* FemurMesh, UStaticMesh* TibiaMesh);
+	void InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator LegRotation, UStaticMesh* CoxaMesh, UStaticMesh* FemurMesh, UStaticMesh* TibiaMesh);
 
 	// BeginPlay에서 물리 관절 연결 및 설정
 	void SetupLegConstraints();
-
-
-
 
 	/*
 	 * 6다리 위치 및 방향 설정
@@ -114,12 +108,13 @@ private:
 		FRotator(0.f, -180.f,   0.f),   // Leg4
 		FRotator(0.f, -135.f,   0.f),   // Leg5
 	};
+
+
+	// ----------------------------------------------- 다리 각 메쉬의 상대 위치 및 방향 설정 hip제외
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
 	FVector ThighOffset = FVector(2.f, 2.5, -1.5);  // Hip에서 Thigh까지의 상대 위치
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
 	FRotator ThighRotation = FRotator(10.f, 0.f, 90.f);
-	//FRotator(Pitch, Yaw, Roll)
-	//       Y축    Z축   X축
 
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Calf", meta = (AllowPrivateAccess = "true"))
 	FVector CalfOffset = FVector(15.5f, -1.f, 2.5);
@@ -127,4 +122,23 @@ private:
 	FRotator CalfRotator = FRotator(180.f, 90.f, 90.f);
 	//FRotator(Pitch, Yaw, Roll)
 	//       Y축    Z축   X축
+
+
+	// -------------------------------------------------- Constraint 위치 및 방향 설정
+
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Hip", meta = (AllowPrivateAccess = "true"))
+	FVector HipConstraintOffset = FVector(-3.f,0.f,0.f);    // 모든 다리의 HipConstraint 위치
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Hip", meta = (AllowPrivateAccess = "true"))
+	FRotator HipConstraintRotation = FRotator(0.f, -90.f, 0.f);   
+
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Thigh", meta = (AllowPrivateAccess = "true"))
+	FVector ThighConstraintOffset = FVector(0.f,0.f,2.5f);  // 모든 다리의 ThighConstraint 위치
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Thigh", meta = (AllowPrivateAccess = "true"))
+	FRotator ThighConstraintRotation = FRotator(0.f, 0.f, 0.f);
+
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Calf", meta = (AllowPrivateAccess = "true"))
+	FVector CalfConstraintOffset = FVector(0.f,0.f,10.f);    // 모든 다리의 CalfConstraint 위치
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Calf", meta = (AllowPrivateAccess = "true"))
+	FRotator CalfConstraintRotation = FRotator(0.f, 0.f, 90.f);
+
 };

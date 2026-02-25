@@ -20,7 +20,7 @@ AHexapodRobot::AHexapodRobot()
 	// 몸통 메시 (루트)
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
 	RootComponent = BodyMesh;
-	BodyMesh->SetSimulatePhysics(true);
+	BodyMesh->SetSimulatePhysics(false);
 	if (BodyMeshAsset.Succeeded())
 		BodyMesh->SetStaticMesh(BodyMeshAsset.Object);
 
@@ -42,7 +42,7 @@ void AHexapodRobot::InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator Le
 	FHexapodLeg& Leg = Legs[LegIndex];
 	FString P = FString::Printf(TEXT("Leg%d"), LegIndex);
 
-	// --- Hip (Coxa) ---
+	// ----------------------------------------------- Hip (Coxa) ---
 	Leg.Hip = CreateDefaultSubobject<USceneComponent>(*FString::Printf(TEXT("%s_Hip"), *P));
 	Leg.Hip->SetupAttachment(RootComponent);
 	Leg.Hip->SetRelativeLocation(LegOffset);
@@ -50,39 +50,43 @@ void AHexapodRobot::InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator Le
 
 	Leg.HipMesh = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("%s_HipMesh"), *P));
 	Leg.HipMesh->SetupAttachment(Leg.Hip);
-	Leg.HipMesh->SetSimulatePhysics(true);
+	Leg.HipMesh->SetSimulatePhysics(false);
 	if (CoxaMesh) Leg.HipMesh->SetStaticMesh(CoxaMesh);
 
 	Leg.HipConstraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(*FString::Printf(TEXT("%s_HipConstraint"), *P));
 	Leg.HipConstraint->SetupAttachment(Leg.Hip);
+	Leg.HipConstraint->SetRelativeLocation(HipConstraintOffset);
+	Leg.HipConstraint->SetRelativeRotation(HipConstraintRotation);
 
-	// --- Thigh (Femur) ---
+	// ----------------------------------------------- Thigh (Femur) ---
 	Leg.Thigh = CreateDefaultSubobject<USceneComponent>(*FString::Printf(TEXT("%s_Thigh"), *P));
-	Leg.Thigh->SetupAttachment(Leg.HipMesh);
-	Leg.Thigh->SetRelativeLocation(ThighOffset); 
-	Leg.Thigh->SetRelativeRotation(ThighRotation);
+	Leg.Thigh->SetupAttachment(RootComponent); // HipMesh 자식 아님 → 물리 바디 중첩 방지
+	// 위치/방향은 OnConstruction에서 FK로 계산
 
 	Leg.ThighMesh = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("%s_ThighMesh"), *P));
 	Leg.ThighMesh->SetupAttachment(Leg.Thigh);
-	Leg.ThighMesh->SetSimulatePhysics(true);
+	Leg.ThighMesh->SetSimulatePhysics(false);
 	if (FemurMesh) Leg.ThighMesh->SetStaticMesh(FemurMesh);
 
 	Leg.ThighConstraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(*FString::Printf(TEXT("%s_ThighConstraint"), *P));
 	Leg.ThighConstraint->SetupAttachment(Leg.Thigh);
+	Leg.ThighConstraint->SetRelativeLocation(ThighConstraintOffset);
+	Leg.ThighConstraint->SetRelativeRotation(ThighConstraintRotation);
 
-	// --- Calf (Tibia) ---
+	// ----------------------------------------------- Calf (Tibia) ---
 	Leg.Calf = CreateDefaultSubobject<USceneComponent>(*FString::Printf(TEXT("%s_Calf"), *P));
-	Leg.Calf->SetupAttachment(Leg.ThighMesh);
-	Leg.Calf->SetRelativeLocation(CalfOffset); 
-	Leg.Calf->SetRelativeRotation(CalfRotator);
+	Leg.Calf->SetupAttachment(RootComponent); // ThighMesh 자식 아님 → 물리 바디 중첩 방지
+	// 위치/방향은 OnConstruction에서 FK로 계산
 
 	Leg.CalfMesh = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("%s_CalfMesh"), *P));
 	Leg.CalfMesh->SetupAttachment(Leg.Calf);
-	Leg.CalfMesh->SetSimulatePhysics(true);
+	Leg.CalfMesh->SetSimulatePhysics(false);
 	if (TibiaMesh) Leg.CalfMesh->SetStaticMesh(TibiaMesh);
 
 	Leg.CalfConstraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(*FString::Printf(TEXT("%s_CalfConstraint"), *P));
 	Leg.CalfConstraint->SetupAttachment(Leg.Calf);
+	Leg.CalfConstraint->SetRelativeLocation(CalfConstraintOffset);
+	Leg.CalfConstraint->SetRelativeRotation(CalfConstraintRotation);
 }
 
 
@@ -101,16 +105,35 @@ void AHexapodRobot::OnConstruction(const FTransform& Transform)
 		if (HipRotations.IsValidIndex(i))
 			Legs[i].Hip->SetRelativeRotation(HipRotations[i]);
 
-		if (Legs[i].Thigh)
+		// FK: Thigh 월드 위치 = Hip위치 + Hip회전 * ThighOffset
+		if (HipOffsets.IsValidIndex(i) && HipRotations.IsValidIndex(i) && Legs[i].Thigh)
 		{
-			Legs[i].Thigh->SetRelativeLocation(ThighOffset);
-			Legs[i].Thigh->SetRelativeRotation(ThighRotation);
-		}
+			FQuat HipQuat = HipRotations[i].Quaternion();
+			FVector ThighWorldPos = HipOffsets[i] + HipQuat.RotateVector(ThighOffset);
+			FQuat   ThighWorldQuat = HipQuat * ThighRotation.Quaternion();
+			Legs[i].Thigh->SetRelativeLocation(ThighWorldPos);
+			Legs[i].Thigh->SetRelativeRotation(ThighWorldQuat.Rotator());
 
-		if (Legs[i].Calf)
-		{
-			Legs[i].Calf->SetRelativeLocation(CalfOffset);
-			Legs[i].Calf->SetRelativeRotation(CalfRotator);
+			// FK: Calf 월드 위치 = Thigh위치 + Thigh회전 * CalfOffset
+			if (Legs[i].Calf)
+			{
+				FVector CalfWorldPos = ThighWorldPos + ThighWorldQuat.RotateVector(CalfOffset);
+				FQuat   CalfWorldQuat = ThighWorldQuat * CalfRotator.Quaternion();
+				Legs[i].Calf->SetRelativeLocation(CalfWorldPos);
+				Legs[i].Calf->SetRelativeRotation(CalfWorldQuat.Rotator());
+			}
+		}
+		if (Legs[i].HipConstraint) {
+			Legs[i].HipConstraint->SetRelativeLocation(HipConstraintOffset);
+			Legs[i].HipConstraint->SetRelativeRotation(HipConstraintRotation);
+		}
+		if (Legs[i].ThighConstraint) {
+			Legs[i].ThighConstraint->SetRelativeLocation(ThighConstraintOffset);
+			Legs[i].ThighConstraint->SetRelativeRotation(ThighConstraintRotation);
+		}
+		if(Legs[i].CalfConstraint) {
+			Legs[i].CalfConstraint->SetRelativeLocation(CalfConstraintOffset);
+			Legs[i].CalfConstraint->SetRelativeRotation(CalfConstraintRotation);
 		}
 	}
 }
@@ -119,6 +142,27 @@ void AHexapodRobot::BeginPlay()
 {
 	Super::BeginPlay();
 	SetupLegConstraints();
+	BodyMesh->SetSimulatePhysics(false); // 몸통은 키네마틱 유지 (앵커 역할)
+	for (auto& Leg : Legs)
+	{
+		Leg.HipMesh->SetSimulatePhysics(true);
+		Leg.ThighMesh->SetSimulatePhysics(true);
+		Leg.CalfMesh->SetSimulatePhysics(true);
+	}
+
+	TArray<UPrimitiveComponent*> Components;
+	GetComponents<UPrimitiveComponent>(Components);
+	for (UPrimitiveComponent* CompA : Components)
+	{
+		for (UPrimitiveComponent* CompB : Components)
+		{
+			if (CompA != CompB)
+				CompA->IgnoreComponentWhenMoving(CompB, true);
+		}
+	}
+	TArray<float> ZeroTargets;
+	ZeroTargets.Init(0.f, 18);
+	ApplyJointTargets(ZeroTargets);
 }
 
 void AHexapodRobot::SetupLegConstraints()
@@ -130,29 +174,38 @@ void AHexapodRobot::SetupLegConstraints()
 		// Hip 관절: Body <-> HipMesh
 		// 수평 회전만 허용 (Yaw ±45도)
 		Leg.HipConstraint->SetConstrainedComponents(BodyMesh, NAME_None, Leg.HipMesh, NAME_None);
+		Leg.HipConstraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
+		Leg.HipConstraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
+		Leg.HipConstraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
 		Leg.HipConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 45.f);
 		Leg.HipConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.HipConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.HipConstraint->SetAngularOrientationDrive(true, false);
-		Leg.HipConstraint->SetAngularDriveParams(1000.f, 100.f, 1000.f); // Stiffness, Damping, ForceLimit
+		Leg.HipConstraint->SetAngularDriveParams(10.f, 10.f, 10.f); // Stiffness, Damping, ForceLimit
 
 		// Thigh 관절: HipMesh <-> ThighMesh
 		// 수직 회전만 허용 (Pitch ±60도)
 		Leg.ThighConstraint->SetConstrainedComponents(Leg.HipMesh, NAME_None, Leg.ThighMesh, NAME_None);
+		Leg.ThighConstraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
+		Leg.ThighConstraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
+		Leg.ThighConstraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
 		Leg.ThighConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 60.f);
 		Leg.ThighConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.ThighConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.ThighConstraint->SetAngularOrientationDrive(true, false);
-		Leg.ThighConstraint->SetAngularDriveParams(1000.f, 100.f, 1000.f);
+		Leg.ThighConstraint->SetAngularDriveParams(10.f, 10.f, 10.f);
 
 		// Calf 관절: ThighMesh <-> CalfMesh
 		// 수직 회전만 허용 (Pitch ±60도)
 		Leg.CalfConstraint->SetConstrainedComponents(Leg.ThighMesh, NAME_None, Leg.CalfMesh, NAME_None);
+		Leg.CalfConstraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
+		Leg.CalfConstraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
+		Leg.CalfConstraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
 		Leg.CalfConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 60.f);
 		Leg.CalfConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.CalfConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.CalfConstraint->SetAngularOrientationDrive(true, false);
-		Leg.CalfConstraint->SetAngularDriveParams(1000.f, 100.f, 1000.f);
+		Leg.CalfConstraint->SetAngularDriveParams(10.f, 10.f, 10.f);
 	}
 }
 
