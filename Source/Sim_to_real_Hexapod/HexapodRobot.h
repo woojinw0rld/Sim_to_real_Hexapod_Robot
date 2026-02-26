@@ -83,20 +83,20 @@ private:
 	 * 6다리 위치 및 방향 설정
 	 *
 	 *  Leg3  Leg4  Leg5
-	 *   [앞] [중] [뒤]
+	 *   [뒤] [중] [앞]
 	 *  ================  (몸통)
-	 *   [앞] [중] [뒤]
+	 *   [뒤] [중] [앞]
 	 *  Leg0  Leg1  Leg2
 	 */
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Hip", meta = (AllowPrivateAccess = "true"))
 	// 전부다 hip위치 기준.
 	TArray<FVector> HipOffsets = {
-			FVector(8.f,    10.f,  0.f),  // Leg0: 앞 오른쪽
-			FVector(10.f,    0.f,  0.f),  // Leg1: 중 오른쪽
-			FVector(8.f,   -10.f,  0.f),  // Leg2: 뒤 오른쪽
-			FVector(-8.f,   10.f,  0.f),  // Leg3: 앞 왼쪽
-			FVector(-10.f,   0.f,  0.f),  // Leg4: 중 왼쪽
-			FVector(-8.f,  -10.f,  0.f),  // Leg5: 뒤 왼쪽
+			FVector(8.f,    10.f,  0.f),  // Leg0: 뒤 오른쪽
+			FVector(11.f,    0.f,  0.f),  // Leg1: 중 오른쪽
+			FVector(8.f,   -10.f,  0.f),  // Leg2: 앞 오른쪽
+			FVector(-8.f,   10.f,  0.f),  // Leg3: 뒤 왼쪽
+			FVector(-11.f,   0.f,  0.f),  // Leg4: 중 왼쪽
+			FVector(-8.f,  -10.f,  0.f),  // Leg5: 앞 왼쪽
 	};
 	// 전부다 hip위치 기준.
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Hip", meta = (AllowPrivateAccess = "true"))
@@ -112,14 +112,14 @@ private:
 
 	// ----------------------------------------------- 다리 각 메쉬의 상대 위치 및 방향 설정 hip제외
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
-	FVector ThighOffset = FVector(2.f, 2.5, -1.5);  // Hip에서 Thigh까지의 상대 위치
-	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
+	FVector ThighOffset = FVector(2.f, -2.5f, -1.5f);  // Hip에서 Thigh까지의 상대 위치
+	UPROPERTY(EditAnywhere, BluePrintReadWrite, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
 	FRotator ThighRotation = FRotator(10.f, 0.f, 90.f);
 
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Calf", meta = (AllowPrivateAccess = "true"))
 	FVector CalfOffset = FVector(15.5f, -1.f, 2.5);
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Calf", meta = (AllowPrivateAccess = "true"))
-	FRotator CalfRotator = FRotator(180.f, 90.f, 90.f);
+	FRotator CalfRotator = FRotator(0.f, 90.f, 90.f);
 	//FRotator(Pitch, Yaw, Roll)
 	//       Y축    Z축   X축
 

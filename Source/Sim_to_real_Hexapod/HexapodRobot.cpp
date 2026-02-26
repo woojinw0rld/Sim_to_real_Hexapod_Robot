@@ -20,7 +20,7 @@ AHexapodRobot::AHexapodRobot()
 	// 몸통 메시 (루트)
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
 	RootComponent = BodyMesh;
-	BodyMesh->SetSimulatePhysics(false);
+	
 	if (BodyMeshAsset.Succeeded())
 		BodyMesh->SetStaticMesh(BodyMeshAsset.Object);
 
@@ -141,25 +141,14 @@ void AHexapodRobot::OnConstruction(const FTransform& Transform)
 void AHexapodRobot::BeginPlay()
 {
 	Super::BeginPlay();
-	SetupLegConstraints();
-	BodyMesh->SetSimulatePhysics(false); // 몸통은 키네마틱 유지 (앵커 역할)
+	BodyMesh->SetSimulatePhysics(false);
 	for (auto& Leg : Legs)
 	{
 		Leg.HipMesh->SetSimulatePhysics(true);
 		Leg.ThighMesh->SetSimulatePhysics(true);
 		Leg.CalfMesh->SetSimulatePhysics(true);
 	}
-
-	TArray<UPrimitiveComponent*> Components;
-	GetComponents<UPrimitiveComponent>(Components);
-	for (UPrimitiveComponent* CompA : Components)
-	{
-		for (UPrimitiveComponent* CompB : Components)
-		{
-			if (CompA != CompB)
-				CompA->IgnoreComponentWhenMoving(CompB, true);
-		}
-	}
+	SetupLegConstraints();
 	TArray<float> ZeroTargets;
 	ZeroTargets.Init(0.f, 18);
 	ApplyJointTargets(ZeroTargets);
@@ -170,30 +159,34 @@ void AHexapodRobot::SetupLegConstraints()
 	for (int32 i = 0; i < 6; i++)
 	{
 		FHexapodLeg& Leg = Legs[i];
-
+		/*
+			Twist  = X축
+			Swing1 = Z축  z축을 중심으로 회전 적용.
+			Swing2 = Y축
+		*/
 		// Hip 관절: Body <-> HipMesh
-		// 수평 회전만 허용 (Yaw ±45도)
+		// 수평 회전만 허용 (Yaw ±90도)
 		Leg.HipConstraint->SetConstrainedComponents(BodyMesh, NAME_None, Leg.HipMesh, NAME_None);
 		Leg.HipConstraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
 		Leg.HipConstraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
 		Leg.HipConstraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
-		Leg.HipConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 45.f);
+		Leg.HipConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 90.f);
 		Leg.HipConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.HipConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.HipConstraint->SetAngularOrientationDrive(true, false);
-		Leg.HipConstraint->SetAngularDriveParams(10.f, 10.f, 10.f); // Stiffness, Damping, ForceLimit
+		Leg.HipConstraint->SetAngularDriveParams(1500.f, 100.f, 328.f); // Stiffness, Damping, ForceLimit
 
 		// Thigh 관절: HipMesh <-> ThighMesh
-		// 수직 회전만 허용 (Pitch ±60도)
+		// 수직 회전만 허용 (Pitch ±90도)
 		Leg.ThighConstraint->SetConstrainedComponents(Leg.HipMesh, NAME_None, Leg.ThighMesh, NAME_None);
 		Leg.ThighConstraint->SetLinearXLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
 		Leg.ThighConstraint->SetLinearYLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
 		Leg.ThighConstraint->SetLinearZLimit(ELinearConstraintMotion::LCM_Locked, 0.f);
-		Leg.ThighConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 60.f);
+		Leg.ThighConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 90.f);
 		Leg.ThighConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.ThighConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.ThighConstraint->SetAngularOrientationDrive(true, false);
-		Leg.ThighConstraint->SetAngularDriveParams(10.f, 10.f, 10.f);
+		Leg.ThighConstraint->SetAngularDriveParams(1500.f, 100.f, 328.f);
 
 		// Calf 관절: ThighMesh <-> CalfMesh
 		// 수직 회전만 허용 (Pitch ±60도)
@@ -205,7 +198,7 @@ void AHexapodRobot::SetupLegConstraints()
 		Leg.CalfConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.CalfConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.CalfConstraint->SetAngularOrientationDrive(true, false);
-		Leg.CalfConstraint->SetAngularDriveParams(10.f, 10.f, 10.f);
+		Leg.CalfConstraint->SetAngularDriveParams(1500.f, 100.f, 328.f);
 	}
 }
 
@@ -229,9 +222,9 @@ void AHexapodRobot::ApplyJointTargets(const TArray<float>& Targets)
 
 	for (int32 i = 0; i < 6; i++)
 	{
-		Legs[i].HipConstraint->SetAngularOrientationTarget(FRotator(Targets[i * 3 + 0], 0.f, 0.f));
-		Legs[i].ThighConstraint->SetAngularOrientationTarget(FRotator(Targets[i * 3 + 1], 0.f, 0.f));
-		Legs[i].CalfConstraint->SetAngularOrientationTarget(FRotator(Targets[i * 3 + 2], 0.f, 0.f));
+		Legs[i].HipConstraint->SetAngularOrientationTarget(FRotator(   0.f, Targets[i * 3 + 0], 0.f));
+		Legs[i].ThighConstraint->SetAngularOrientationTarget(FRotator( 0.f, Targets[i * 3 + 1], 0.f));
+		Legs[i].CalfConstraint->SetAngularOrientationTarget(FRotator(  0.f, Targets[i * 3 + 2], 0.f));
 	}
 }
 
@@ -244,8 +237,8 @@ TArray<float> AHexapodRobot::GetJointAngles() const
 	for (int32 i = 0; i < 6; i++)
 	{
 		Angles[i * 3 + 0] = Legs[i].HipMesh->GetRelativeRotation().Yaw;
-		Angles[i * 3 + 1] = Legs[i].ThighMesh->GetRelativeRotation().Pitch;
-		Angles[i * 3 + 2] = Legs[i].CalfMesh->GetRelativeRotation().Pitch;
+		Angles[i * 3 + 1] = Legs[i].ThighMesh->GetRelativeRotation().Yaw;
+		Angles[i * 3 + 2] = Legs[i].CalfMesh->GetRelativeRotation().Yaw;
 	}
 
 	return Angles;
