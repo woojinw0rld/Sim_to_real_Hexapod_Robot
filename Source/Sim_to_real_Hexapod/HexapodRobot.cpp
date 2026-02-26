@@ -2,6 +2,9 @@
 
 #include "HexapodRobot.h"
 #include "UObject/ConstructorHelpers.h"
+#include "HexapodMovementComponent.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 
 AHexapodRobot::AHexapodRobot()
 {
@@ -17,9 +20,21 @@ AHexapodRobot::AHexapodRobot()
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> TibiaAsset(
 		TEXT("/Game/Robots/Meshes/Tibia-996.Tibia-996"));
 
+
+
+
 	// 몸통 메시 (루트)
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
 	RootComponent = BodyMesh;
+
+	//카메라
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
+	SpringArm->SetupAttachment(RootComponent);
+	SpringArm->TargetArmLength = 300.f;     // 카메라 거리
+	SpringArm->bUsePawnControlRotation = true;  // 마우스로 회전
+
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(SpringArm);
 	
 	if (BodyMeshAsset.Succeeded())
 		BodyMesh->SetStaticMesh(BodyMeshAsset.Object);
@@ -34,6 +49,8 @@ AHexapodRobot::AHexapodRobot()
 	{
 		InitializeLeg(i, HipOffsets[i], HipRotations[i], CoxaMesh, FemurMesh, TibiaMesh);
 	}
+
+	MovementComponent = CreateDefaultSubobject<UHexapodMovementComponent>(TEXT("MovementComponent"));
 }
 
 void AHexapodRobot::InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator LegRotation,
@@ -141,7 +158,10 @@ void AHexapodRobot::OnConstruction(const FTransform& Transform)
 void AHexapodRobot::BeginPlay()
 {
 	Super::BeginPlay();
-	BodyMesh->SetSimulatePhysics(false);
+	BodyMesh->SetSimulatePhysics(true);
+	BodyMesh->SetEnableGravity(false);
+	BodyMesh->SetLinearDamping(100.f);
+	BodyMesh->SetAngularDamping(100.f);
 	for (auto& Leg : Legs)
 	{
 		Leg.HipMesh->SetSimulatePhysics(true);
@@ -150,7 +170,7 @@ void AHexapodRobot::BeginPlay()
 	}
 	SetupLegConstraints();
 	TArray<float> ZeroTargets;
-	ZeroTargets.Init(0.f, 18);
+	ZeroTargets.Init(45.f, 18);
 	ApplyJointTargets(ZeroTargets);
 }
 
@@ -173,7 +193,7 @@ void AHexapodRobot::SetupLegConstraints()
 		Leg.HipConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 90.f);
 		Leg.HipConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.HipConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
-		Leg.HipConstraint->SetAngularOrientationDrive(true, false);
+		Leg.HipConstraint->SetAngularOrientationDrive(true, true);
 		Leg.HipConstraint->SetAngularDriveParams(1500.f, 100.f, 328.f); // Stiffness, Damping, ForceLimit
 
 		// Thigh 관절: HipMesh <-> ThighMesh
@@ -185,7 +205,7 @@ void AHexapodRobot::SetupLegConstraints()
 		Leg.ThighConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 90.f);
 		Leg.ThighConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.ThighConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
-		Leg.ThighConstraint->SetAngularOrientationDrive(true, false);
+		Leg.ThighConstraint->SetAngularOrientationDrive(true, true);
 		Leg.ThighConstraint->SetAngularDriveParams(1500.f, 100.f, 328.f);
 
 		// Calf 관절: ThighMesh <-> CalfMesh
@@ -197,20 +217,47 @@ void AHexapodRobot::SetupLegConstraints()
 		Leg.CalfConstraint->SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, 60.f);
 		Leg.CalfConstraint->SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Locked, 0.f);
 		Leg.CalfConstraint->SetAngularTwistLimit(EAngularConstraintMotion::ACM_Locked, 0.f);
-		Leg.CalfConstraint->SetAngularOrientationDrive(true, false);
+		Leg.CalfConstraint->SetAngularOrientationDrive(true, true);
 		Leg.CalfConstraint->SetAngularDriveParams(1500.f, 100.f, 328.f);
+
+		FVector Force, Torque;
+		Leg.HipConstraint->GetConstraintForce(Force, Torque);
+		UE_LOG(LogTemp, Warning, TEXT("Leg%d Constraint Force: %s"),
+			i, *Force.ToString());
+
 	}
 }
 
 void AHexapodRobot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	//TArray<float> ZeroTargets = GetJointAngles();
+	/*for (int32 i = 0; i < 18; i++) {
+		UE_LOG(LogTemp, Display, TEXT("Get Joint Angles: %f"), ZeroTargets[i]);
+	}*/
+
+	// BodyMesh 고정 (보행 테스트용)
+	//BodyMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
+	//BodyMesh->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
 }
 
 void AHexapodRobot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AHexapodRobot::MoveForward);
+	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AHexapodRobot::MoveRight);
 }
+
+void AHexapodRobot::MoveForward(float Value)
+{
+	MovementComponent->SetMoveForward(Value);
+}
+
+void AHexapodRobot::MoveRight(float Value)
+{
+	MovementComponent->SetMoveRight(Value);
+}
+
 
 // RL Action: 18개 목표 각도 → 관절 드라이브 적용
 // Targets[i*3+0] = Leg i의 Hip 목표각도
@@ -226,6 +273,7 @@ void AHexapodRobot::ApplyJointTargets(const TArray<float>& Targets)
 		Legs[i].ThighConstraint->SetAngularOrientationTarget(FRotator( 0.f, Targets[i * 3 + 1], 0.f));
 		Legs[i].CalfConstraint->SetAngularOrientationTarget(FRotator(  0.f, Targets[i * 3 + 2], 0.f));
 	}
+
 }
 
 // RL Observation: 현재 관절 각도 18개 반환

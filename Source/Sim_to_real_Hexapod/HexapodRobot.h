@@ -60,11 +60,23 @@ public:
 	// RL Observation: 18개 관절 현재 각도 반환
 	TArray<float> GetJointAngles() const;
 
+	const TArray<FHexapodLeg>& GetLegs() const { return Legs; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 private:
+	void MoveForward(float Value);
+	void MoveRight(float Value);
+
+	UPROPERTY(VisibleAnywhere, Category = "Robot|Camera")
+	class USpringArmComponent* SpringArm;
+
+	UPROPERTY(VisibleAnywhere, Category = "Robot|Camera")
+	class UCameraComponent* Camera;
+
+
 	// 몸통 메시
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* BodyMesh;
@@ -140,5 +152,9 @@ private:
 	FVector CalfConstraintOffset = FVector(0.f,0.f,10.f);    // 모든 다리의 CalfConstraint 위치
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Calf", meta = (AllowPrivateAccess = "true"))
 	FRotator CalfConstraintRotation = FRotator(0.f, 0.f, 90.f);
+
+
+	UPROPERTY(VisibleAnywhere, Category = "Movement")
+	class UHexapodMovementComponent* MovementComponent;
 
 };
