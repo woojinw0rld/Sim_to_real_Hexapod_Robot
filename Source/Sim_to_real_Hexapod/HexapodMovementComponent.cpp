@@ -107,10 +107,10 @@ void UHexapodMovementComponent::ApplyLegMovement(int32 LegIndex, float Phase, bo
 		SetJointTarget(Leg.ThighConstraint, zOffset);
 		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f);
 	}
-	else
+	else 
 	{
 		SetJointTarget(Leg.HipConstraint, xOffset * -1.0f);  // 오른쪽은 부호 반전
-		SetJointTarget(Leg.ThighConstraint, zOffset);
+		SetJointTarget(Leg.ThighConstraint,zOffset);
 		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f);
 	}
 }
@@ -121,8 +121,8 @@ void UHexapodMovementComponent::ResetToCenter() {
 
 	for (const FHexapodLeg& Leg : Legs) {
 		SetJointTarget(Leg.HipConstraint, 0.f);
-		SetJointTarget(Leg.ThighConstraint, 0.f);
-		SetJointTarget(Leg.CalfConstraint, 0.f);
+		SetJointTarget(Leg.ThighConstraint, 45.f);
+		SetJointTarget(Leg.CalfConstraint, 60.f);
 	}
 }
 

@@ -125,7 +125,7 @@ private:
 	// ----------------------------------------------- 다리 각 메쉬의 상대 위치 및 방향 설정 hip제외
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
 	FVector ThighOffset = FVector(2.f, -2.5f, -1.5f);  // Hip에서 Thigh까지의 상대 위치
-	UPROPERTY(EditAnywhere, BluePrintReadWrite, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
 	FRotator ThighRotation = FRotator(10.f, 0.f, 90.f);
 
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Calf", meta = (AllowPrivateAccess = "true"))
@@ -145,8 +145,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Thigh", meta = (AllowPrivateAccess = "true"))
 	FVector ThighConstraintOffset = FVector(0.f,0.f,2.5f);  // 모든 다리의 ThighConstraint 위치
-	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Thigh", meta = (AllowPrivateAccess = "true"))
-	FRotator ThighConstraintRotation = FRotator(0.f, 0.f, 0.f);
+	//UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Thigh", meta = (AllowPrivateAccess = "true"))
+	FRotator ThighConstraintRotation = FRotator(0.f, 0.f, 180.f);
 
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Calf", meta = (AllowPrivateAccess = "true"))
 	FVector CalfConstraintOffset = FVector(0.f,0.f,10.f);    // 모든 다리의 CalfConstraint 위치
