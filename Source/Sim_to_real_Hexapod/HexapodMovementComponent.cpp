@@ -105,13 +105,13 @@ void UHexapodMovementComponent::ApplyLegMovement(int32 LegIndex, float Phase, bo
 	{
 		SetJointTarget(Leg.HipConstraint, xOffset);
 		SetJointTarget(Leg.ThighConstraint, zOffset);
-		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f);
+		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f+45); //
 	}
 	else 
 	{
 		SetJointTarget(Leg.HipConstraint, xOffset * -1.0f);  // 오른쪽은 부호 반전
 		SetJointTarget(Leg.ThighConstraint,zOffset);
-		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f);
+		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f + 45); //
 	}
 }
 
@@ -121,7 +121,7 @@ void UHexapodMovementComponent::ResetToCenter() {
 
 	for (const FHexapodLeg& Leg : Legs) {
 		SetJointTarget(Leg.HipConstraint, 0.f);
-		SetJointTarget(Leg.ThighConstraint, 45.f);
+		SetJointTarget(Leg.ThighConstraint, 0.f);
 		SetJointTarget(Leg.CalfConstraint, 60.f);
 	}
 }
@@ -129,5 +129,9 @@ void UHexapodMovementComponent::ResetToCenter() {
 void UHexapodMovementComponent::SetJointTarget(UPhysicsConstraintComponent* Constraint, float Target) {
 	if (!Constraint) return;
 	Constraint->SetAngularOrientationTarget(FRotator(0.f, Target, 0.f));  //Z축을 회전축으로 움직이기에,,,,,,,,,
-	//UE_LOG(LogTemp, Display, TEXT("%f"), Target);
 }
+
+
+/* 
+ 
+*/

@@ -8,7 +8,10 @@ public class Sim_to_real_Hexapod : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] {
+			"Core", "CoreUObject", "Engine", "InputCore",
+			"Sockets", "Networking"   // HexapodNetworkComponent UDP 소켓
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

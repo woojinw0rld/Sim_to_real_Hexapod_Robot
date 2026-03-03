@@ -148,7 +148,7 @@ private:
 	//UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Thigh", meta = (AllowPrivateAccess = "true"))
 	FRotator ThighConstraintRotation = FRotator(0.f, 0.f, 180.f);
 
-	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Calf", meta = (AllowPrivateAccess = "true"))
+	//UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Calf", meta = (AllowPrivateAccess = "true"))
 	FVector CalfConstraintOffset = FVector(0.f,0.f,10.f);    // 모든 다리의 CalfConstraint 위치
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|ConstraintPosition|Calf", meta = (AllowPrivateAccess = "true"))
 	FRotator CalfConstraintRotation = FRotator(0.f, 0.f, 90.f);
@@ -156,5 +156,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Movement")
 	class UHexapodMovementComponent* MovementComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Network")
+	class UHexapodNetworkComponent* NetworkComponent;
 
 };

@@ -3,6 +3,7 @@
 #include "HexapodRobot.h"
 #include "UObject/ConstructorHelpers.h"
 #include "HexapodMovementComponent.h"
+#include "HexapodNetworkComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
@@ -46,6 +47,7 @@ AHexapodRobot::AHexapodRobot()
 	}
 
 	MovementComponent = CreateDefaultSubobject<UHexapodMovementComponent>(TEXT("MovementComponent"));
+	NetworkComponent  = CreateDefaultSubobject<UHexapodNetworkComponent>(TEXT("NetworkComponent"));
 }
 
 void AHexapodRobot::InitializeLeg(int32 LegIndex, FVector LegOffset, FRotator LegRotation, UStaticMesh* CoxaMesh, UStaticMesh* FemurMesh, UStaticMesh* TibiaMesh)
@@ -170,7 +172,7 @@ void AHexapodRobot::BeginPlay()
 	StandingPose.SetNum(18);
 	for (int32 i = 0; i < 6; i++){
 		StandingPose[i * 3 + 0] = 0.f;   // Hip
-		StandingPose[i * 3 + 1] = 45.f;  // Thigh
+		StandingPose[i * 3 + 1] = 0.f;  // Thigh
 		StandingPose[i * 3 + 2] = 60.f;  // Calf
 	}
 	ApplyJointTargets(StandingPose);
