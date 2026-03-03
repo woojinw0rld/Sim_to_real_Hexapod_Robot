@@ -301,9 +301,12 @@ TArray<float> AHexapodRobot::GetJointAngles() const
 void AHexapodRobot::MoveForward(float Value)
 {
 	MovementComponent->SetMoveForward(Value);
+	//UE_LOG(LogTemp, Display, TEXT("MoveForwad ::   %.f"), Value);
 }
 
 void AHexapodRobot::MoveRight(float Value)
 {
-	MovementComponent->SetMoveRight(Value);
+	MovementComponent->SetMoveRight(Value); 
+	//UE_LOG(LogTemp, Display, TEXT("MoveRight ::   %.f"), Value);
+	
 }

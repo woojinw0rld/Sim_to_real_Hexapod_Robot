@@ -24,7 +24,8 @@ void UHexapodMovementComponent::BeginPlay()
 	if(HexapodRobot == nullptr){
 		UE_LOG(LogTemp, Warning, TEXT("HexapodMovementComponent: Owner is not AHexapodRobot!"));
 		return;
-	}	
+	}
+	
 }
 
 
@@ -33,51 +34,43 @@ void UHexapodMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	//UE_LOG(LogTemp, Display, TEXT("InputDirection X: %f\tY: %f"), InputDirection.X, InputDirection.Y);
-	if (InputDirection.SizeSquared() > 0.01f)  // ÀÔ·ÂÀÌ ÀÖÀ¸¸é
+	if (InputDirection.SizeSquared() > 0.01f)
 	{
 		GaitPhase = FMath::Fmod(GaitPhase + DeltaTime * WalkSpeed, 1.0f);
 		CalculateStepAndMove(GaitPhase);
 	}
-	else  // ÀÔ·ÂÀÌ ¾øÀ¸¸é
-	{
+	/*else {
 		ResetToCenter();
-	}
+	}*/
+	// INPUT ì—†ìœ¼ë©´ ì•„ë¬´ê²ƒë„ ì•ˆ í•¨ â€” Python JOINTS ëª…ë ¹ì´ ì œì–´ê¶Œì„ ê°€ì§
 	// ...
 }
 
 void UHexapodMovementComponent::CalculateStepAndMove(float GlobalPhase) {
-	// Â÷µ¿±¸µ¿: ÀÔ·Â¿¡ µû¶ó ¿ŞÂÊ/¿À¸¥ÂÊ º¸Æø °è»ê
+	
 	float leftStride = (InputDirection.X * MaxStride) + (InputDirection.Y * TurnRate);
 	float rightStride = (InputDirection.X * MaxStride) - (InputDirection.Y * TurnRate);
 
-	// ÃÖ´ë º¸Æø Á¦ÇÑ
+	// ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	leftStride = FMath::Clamp(leftStride, -MaxStride, MaxStride);
 	rightStride = FMath::Clamp(rightStride, -MaxStride, MaxStride);
 
-	// Tripod Gait: µÎ ±×·ì Phase °è»ê
+	
 	float phaseA = GlobalPhase;
 	float phaseB = FMath::Fmod(GlobalPhase + 0.5f, 1.0f);
 
-	// Group A: Leg5(L¾Õ), Leg1(RÁß), Leg3(LµÚ)
-	ApplyLegMovement(5, phaseA, true, leftStride);   // ¿ŞÂÊ ¾Õ
-	ApplyLegMovement(1, phaseA, false, rightStride);  // ¿À¸¥ÂÊ Áß
-	ApplyLegMovement(3, phaseA, true, leftStride);   // ¿ŞÂÊ µÚ
+	// Group A: Leg5(Lï¿½ï¿½), Leg1(Rï¿½ï¿½), Leg3(Lï¿½ï¿½)
+	ApplyLegMovement(5, phaseA, true, leftStride);   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+	ApplyLegMovement(1, phaseA, false, rightStride);  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+	ApplyLegMovement(3, phaseA, true, leftStride);   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 
-	// Group B: Leg2(R¾Õ), Leg4(LÁß), Leg0(RµÚ)
-	ApplyLegMovement(2, phaseB, false, rightStride);  // ¿À¸¥ÂÊ ¾Õ
-	ApplyLegMovement(4, phaseB, true, leftStride);   // ¿ŞÂÊ Áß
-	ApplyLegMovement(0, phaseB, false, rightStride);  // ¿À¸¥ÂÊ µÚ
+	// Group B: Leg2(Rï¿½ï¿½), Leg4(Lï¿½ï¿½), Leg0(Rï¿½ï¿½)
+	ApplyLegMovement(2, phaseB, false, rightStride);  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+	ApplyLegMovement(4, phaseB, true, leftStride);   // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+	ApplyLegMovement(0, phaseB, false, rightStride);  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 }
 
-/**
-	* ´Ù¸® 1°³ÀÇ Swing/Stance ¿òÁ÷ÀÓÀ» °è»êÇÏ¿© °üÀı °¢µµ Àû¿ë
-	* @param LegIndex  ´Ù¸® ÀÎµ¦½º (0~5)
-	* @param Phase     ÇöÀç °ÉÀ½ »çÀÌÅ¬ À§Ä¡ (0.0 ~ 1.0)
-		* Swing Phase(0.0 ~0.5) : ´Ù¸®°¡ °øÁß¿¡¼­ ¾ÕÀ¸·Î ÀÌµ¿
-		* Stance Phase(0.5 ~1.0) : ´Ù¸®°¡ ¶¥À» Â¤°í µÚ·Î ¹Ğ¾î³¿ ¡æ ¸öÅëÀÌ ¾ÕÀ¸·Î 
-	* @param bIsLeft   ¿ŞÂÊ ´Ù¸® ¿©ºÎ (¿À¸¥ÂÊÀÌ¸é Hip ºÎÈ£ ¹İÀü)
-	* @param CurrentStride º¸Æø Å©±â (À½¼ö = ÈÄÁø)
-*/
+
 void UHexapodMovementComponent::ApplyLegMovement(int32 LegIndex, float Phase, bool bIsLeft, float CurrentStride) {
 	if (!HexapodRobot) return;
 	const TArray<FHexapodLeg>& Legs = HexapodRobot->GetLegs();
@@ -86,15 +79,15 @@ void UHexapodMovementComponent::ApplyLegMovement(int32 LegIndex, float Phase, bo
 	float xOffset = 0.f;
 	float zOffset = 0.f;
 
-	if (Phase < 0.5f)  // Swing Phase: °øÁß¿¡¼­ ¾ÕÀ¸·Î
+	if (Phase < 0.5f)  
 	{
-		float t = Phase * 2.0f;  // 0~0.5¸¦ 0~1·Î Á¤±ÔÈ­
-		xOffset = FMath::Lerp(-CurrentStride, CurrentStride, t);    //Hio¿ë ¾ÕµÚ È¾¿îµ¿
-		zOffset = FMath::Sin(t * PI) * LiftAngle;					//calf. Thigh¿ë »óÇÏ¿îµ¿ °è»ê¿ë. 
+		float t = Phase * 2.0f;  
+		xOffset = FMath::Lerp(-CurrentStride, CurrentStride, t);    
+		zOffset = FMath::Sin(t * PI) * LiftAngle;					
 	}
-	else  // Stance Phase: ¶¥ Â¤°í µÚ·Î ¹Ğ±â
+	else  
 	{
-		float t = (Phase - 0.5f) * 2.0f;  // 0.5~1À» 0~1·Î Á¤±ÔÈ­
+		float t = (Phase - 0.5f) * 2.0f; 
 		xOffset = FMath::Lerp(CurrentStride, -CurrentStride, t);
 		zOffset = 0.f;
 	}
@@ -105,13 +98,13 @@ void UHexapodMovementComponent::ApplyLegMovement(int32 LegIndex, float Phase, bo
 	{
 		SetJointTarget(Leg.HipConstraint, xOffset);
 		SetJointTarget(Leg.ThighConstraint, zOffset);
-		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f+45); //
+		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f+45); 
 	}
 	else 
 	{
-		SetJointTarget(Leg.HipConstraint, xOffset * -1.0f);  // ¿À¸¥ÂÊÀº ºÎÈ£ ¹İÀü
+		SetJointTarget(Leg.HipConstraint, xOffset * -1.0f); 
 		SetJointTarget(Leg.ThighConstraint,zOffset);
-		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f + 45); //
+		SetJointTarget(Leg.CalfConstraint, zOffset * 0.6f + 45); 
 	}
 }
 
@@ -128,10 +121,5 @@ void UHexapodMovementComponent::ResetToCenter() {
 
 void UHexapodMovementComponent::SetJointTarget(UPhysicsConstraintComponent* Constraint, float Target) {
 	if (!Constraint) return;
-	Constraint->SetAngularOrientationTarget(FRotator(0.f, Target, 0.f));  //ZÃàÀ» È¸ÀüÃàÀ¸·Î ¿òÁ÷ÀÌ±â¿¡,,,,,,,,,
+	Constraint->SetAngularOrientationTarget(FRotator(0.f, Target, 0.f));  
 }
-
-
-/* 
- 
-*/

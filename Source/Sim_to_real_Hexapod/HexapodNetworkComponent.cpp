@@ -28,9 +28,13 @@ void UHexapodNetworkComponent::BeginPlay()
 	MovementComp = HexapodRobot->FindComponentByClass<UHexapodMovementComponent>();
 
 	if (InitSocket())
-		UE_LOG(LogTemp, Log, TEXT("HexapodNetworkComponent: UDP 포트 %d 에서 수신 대기 중"), ListenPort);
+	{
+		UE_LOG(LogTemp, Log, TEXT("HexapodNetworkComponent: UDP port %d listening"), ListenPort);
+	}
 	else
-		UE_LOG(LogTemp, Error, TEXT("HexapodNetworkComponent: UDP 포트 %d 열기 실패"), ListenPort);
+	{
+		UE_LOG(LogTemp, Error, TEXT("HexapodNetworkComponent: Failed to open UDP port %d"), ListenPort);
+	}
 }
 
 void UHexapodNetworkComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

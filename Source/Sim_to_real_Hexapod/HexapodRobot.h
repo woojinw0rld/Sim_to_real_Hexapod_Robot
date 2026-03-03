@@ -100,15 +100,15 @@ private:
 	 *   [뒤] [중] [앞]
 	 *  Leg0  Leg1  Leg2
 	 */
-	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Hip", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Robot|LegsPosition|Hip", meta = (AllowPrivateAccess = "true"))
 	// 전부다 hip위치 기준.
 	TArray<FVector> HipOffsets = {
-			FVector(8.f,    10.f,  0.f),  // Leg0: 뒤 오른쪽
-			FVector(11.f,    0.f,  0.f),  // Leg1: 중 오른쪽
-			FVector(8.f,   -10.f,  0.f),  // Leg2: 앞 오른쪽
-			FVector(-8.f,   10.f,  0.f),  // Leg3: 뒤 왼쪽
-			FVector(-11.f,   0.f,  0.f),  // Leg4: 중 왼쪽
-			FVector(-8.f,  -10.f,  0.f),  // Leg5: 앞 왼쪽
+			FVector(8.f,    10.f,  1.f),  // Leg0: 뒤 오른쪽
+			FVector(11.f,    0.f,  1.f),  // Leg1: 중 오른쪽
+			FVector(8.f,   -10.f,  1.f),  // Leg2: 앞 오른쪽
+			FVector(-8.f,   10.f,  1.f),  // Leg3: 뒤 왼쪽
+			FVector(-11.f,   0.f,  1.f),  // Leg4: 중 왼쪽
+			FVector(-8.f,  -10.f,  1.f),  // Leg5: 앞 왼쪽
 	};
 	// 전부다 hip위치 기준.
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Hip", meta = (AllowPrivateAccess = "true"))
@@ -123,8 +123,8 @@ private:
 
 
 	// ----------------------------------------------- 다리 각 메쉬의 상대 위치 및 방향 설정 hip제외
-	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
-	FVector ThighOffset = FVector(2.f, -2.5f, -1.5f);  // Hip에서 Thigh까지의 상대 위치
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
+	FVector ThighOffset = FVector(2.f, -2.5f, 0.f);  // Hip에서 Thigh까지의 상대 위치
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Robot|LegsPosition|Thigh", meta = (AllowPrivateAccess = "true"))
 	FRotator ThighRotation = FRotator(10.f, 0.f, 90.f);
 
